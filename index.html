@@ -1,0 +1,299 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OX 퀴즈</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,sans-serif;background:#f3f5fa;color:#20283b}
+header{background:#253b67;color:white;padding:18px}
+header h1{margin:0 0 12px}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:11px 15px;background:#e7ecf7;color:#22365d;font-size:15px;cursor:pointer}
+nav button{background:#405783;color:white}
+button.active,button.primary{background:#253b67;color:white}
+main{max-width:760px;margin:auto;padding:16px}
+section,.card{background:white;padding:18px;border-radius:14px;margin-bottom:14px;box-shadow:0 2px 10px #1720330c}
+input,textarea{width:100%;padding:12px;border:1px solid #cbd2df;border-radius:8px;margin:6px 0 12px;font-size:16px}
+textarea{min-height:85px}
+.hidden{display:none!important}
+.muted{color:#667085;font-size:14px}
+.msg{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}
+.good{color:#087443}.bad{color:#b42318}
+.answer{display:inline-flex;align-items:center;gap:5px;margin:10px 16px 0 0}
+.answer input{width:auto;margin:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>⭕ OX 퀴즈</h1>
+  <div id="who">연결 중...</div>
+  <nav style="margin-top:14px">
+    <button id="navQuiz" class="active">퀴즈</button>
+    <button id="navAuth">로그인 / 가입</button>
+    <button id="navHistory">기록</button>
+    <button id="navAdmin" class="hidden">문제 관리</button>
+    <button id="logout" class="hidden">로그아웃</button>
+  </nav>
+</header>
+<main>
+  <section id="auth" class="hidden">
+    <h2>회원가입 / 로그인</h2>
+    <label>이메일 주소</label>
+    <input id="email" type="email" placeholder="example@email.com" autocomplete="email">
+    <label>비밀번호</label>
+    <input id="password" type="password" placeholder="6자 이상" autocomplete="current-password">
+    <button id="signup" class="primary">회원가입</button>
+    <button id="login">로그인</button>
+    <p class="muted">가입 확인 이메일이 필요한 경우 이메일을 확인해 주세요.</p>
+    <p id="authMsg" class="msg"></p>
+  </section>
+
+  <section id="quiz">
+    <h2>OX 퀴즈</h2>
+    <p id="intro" class="muted">문제를 불러오는 중...</p>
+    <div id="qs"></div>
+    <button id="submit" class="primary">답안 제출</button>
+    <div id="result"></div>
+    <p id="message" class="msg"></p>
+  </section>
+
+  <section id="history" class="hidden">
+    <h2>나의 기록</h2>
+    <p class="muted">로그인한 회원의 저장 기록을 확인할 수 있어요.</p>
+    <button id="reloadHistory">기록 새로고침</button>
+    <div id="historyList"></div>
+  </section>
+
+  <section id="admin" class="hidden">
+    <h2>문제 관리</h2>
+    <p class="muted">관리자만 문제를 추가하거나 수정·삭제할 수 있어요.</p>
+    <input id="qId" type="hidden">
+    <label>문제</label>
+    <textarea id="qText" placeholder="문제를 입력하세요"></textarea>
+    <label>정답</label>
+    <select id="qAnswer" style="width:100%;padding:12px;margin:6px 0 12px">
+      <option value="true">O</option>
+      <option value="false">X</option>
+    </select>
+    <label>해설</label>
+    <textarea id="qExplanation" placeholder="정답 해설"></textarea>
+    <label><input id="qPublished" type="checkbox" checked style="width:auto"> 공개</label>
+    <p>
+      <button id="saveQuestion" class="primary">문제 저장</button>
+      <button id="clearQuestion">새 문제 작성</button>
+    </p>
+    <p id="adminMsg" class="msg"></p>
+    <div id="adminList"></div>
+  </section>
+</main>
+
+<script>
+const SUPABASE_URL = "https://lwxamqqprowvfymsezkq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_MAn1jK_Yfobh_Aszlsk2XQ_4p_sBbkQ";
+
+const $ = id => document.getElementById(id);
+const validConfig = !SUPABASE_URL.includes("여기에_");
+let db, user = null, isAdmin = false, questions = [], guestToken = "";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+
+function show(id){
+  ["auth","quiz","history","admin"].forEach(x => $(x).classList.toggle("hidden",x!==id));
+  ["navAuth","navQuiz","navHistory","navAdmin"].forEach(x => {
+    const target = {navAuth:"auth",navQuiz:"quiz",navHistory:"history",navAdmin:"admin"}[x];
+    $(x).classList.toggle("active",target===id);
+  });
+}
+function say(id,msg,isError=false){
+  $(id).textContent=msg;
+  $(id).className="msg "+(isError?"bad":"good");
+}
+async function refreshUser(){
+  isAdmin=false;
+  if(user){
+    const {data,error}=await db.from("profiles")
+      .select("username,role").eq("id",user.id).maybeSingle();
+    if(error) console.error(error);
+    isAdmin=data?.role==="admin";
+    $("who").textContent="로그인: "+(data?.username||user.email||"회원");
+  }else $("who").textContent="비회원";
+  $("navAdmin").classList.toggle("hidden",!isAdmin);
+  $("logout").classList.toggle("hidden",!user);
+}
+async function loadQuestions(){
+  const {data,error}=await db.from("questions")
+    .select("id,question,correct_answer,explanation,published")
+    .eq("published",true).order("id");
+  if(error){say("message","문제 불러오기 실패: "+error.message,true);return;}
+  questions=data||[];
+  $("intro").textContent=questions.length+"문제";
+  $("qs").innerHTML=questions.map((q,i)=>`
+    <div class="card">
+      <strong>${i+1}. ${esc(q.question)}</strong><br>
+      <label class="answer"><input type="radio" name="q${q.id}" value="true"> O</label>
+      <label class="answer"><input type="radio" name="q${q.id}" value="false"> X</label>
+    </div>`).join("");
+  $("result").innerHTML="";
+  $("message").textContent="";
+}
+async function signup(){
+  const email=$("email").value.trim(),password=$("password").value;
+  if(!email||!password)return say("authMsg","이메일과 비밀번호를 입력해 주세요.",true);
+  if(password.length<6)return say("authMsg","비밀번호는 6자 이상이어야 해요.",true);
+  const {data,error}=await db.auth.signUp({email,password});
+  if(error)return say("authMsg","가입 실패: "+error.message,true);
+  say("authMsg",data.session
+    ?"가입 완료! 로그인되었습니다."
+    :"가입 요청 완료! 이메일 확인이 필요할 수 있어요.");
+}
+async function login(){
+  const email=$("email").value.trim(),password=$("password").value;
+  if(!email||!password)return say("authMsg","이메일과 비밀번호를 입력해 주세요.",true);
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error)return say("authMsg","로그인 실패: "+error.message,true);
+  say("authMsg","로그인 성공!");
+  show("quiz");
+}
+async function submitQuiz(){
+  const answers=[];
+  for(const q of questions){
+    const selected=document.querySelector(`input[name="q${q.id}"]:checked`);
+    if(!selected)return say("message","모든 문제에 답해 주세요.",true);
+    answers.push({question_id:q.id,answer:selected.value==="true"});
+  }
+  if(!answers.length)return say("message","아직 공개된 문제가 없어요.",true);
+  $("submit").disabled=true;
+  try{
+    const {data,error}=await db.rpc("submit_quiz",{
+      p_answers:answers,
+      p_guest_token:user?null:guestToken
+    });
+    if(error)throw error;
+    $("result").innerHTML=`<h3>점수 ${data.score}/${data.total}</h3>`+
+      (data.results||[]).map((r,i)=>`
+        <div class="card">
+          <strong>${i+1}. ${esc(questions.find(q=>q.id===r.question_id)?.question)}</strong>
+          <p>${r.is_correct?"정답":"오답"} · 내 답 ${r.chosen_answer?"O":"X"} · 정답 ${r.correct_answer?"O":"X"}</p>
+          <p>해설: ${esc(r.explanation)}</p>
+        </div>`).join("");
+    say("message",user?"회원 기록이 저장됐어요.":"비회원 기록이 저장됐어요.");
+  }catch(e){say("message","제출 실패: "+e.message,true);}
+  finally{$("submit").disabled=false;}
+}
+async function loadHistory(){
+  if(!user){$("historyList").textContent="기록을 보려면 로그인해 주세요.";return;}
+  const {data,error}=await db.from("attempts").select("*")
+    .eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
+  if(error){$("historyList").textContent="기록 조회 실패: "+error.message;return;}
+  $("historyList").innerHTML=(data||[]).map(a=>`
+    <div class="card">
+      <strong>${esc(a.score)} / ${esc(a.total)}점</strong>
+      <p>${esc(a.created_at?new Date(a.created_at).toLocaleString():"날짜 없음")}</p>
+      <button class="detailBtn" data-id="${esc(a.id)}">문제별 결과 보기</button>
+      <div id="detail${esc(a.id)}"></div>
+    </div>`).join("")||"저장된 기록이 없습니다.";
+  $("historyList").querySelectorAll(".detailBtn").forEach(b=>{
+    b.onclick=()=>loadAttemptDetails(b.dataset.id);
+  });
+}
+async function loadAttemptDetails(attemptId){
+  const target=$("detail"+attemptId);
+  const {data,error}=await db.from("attempt_answers").select("*")
+    .eq("attempt_id",attemptId);
+  if(error){target.textContent="상세 기록 조회 실패: "+error.message;return;}
+  target.innerHTML=(data||[]).map(a=>`
+    <p>문제 ID ${esc(a.question_id)} · 내 답 ${a.chosen_answer?"O":"X"} · ${a.is_correct?"정답":"오답"}</p>`).join("")||"상세 기록이 없습니다.";
+}
+function clearQuestion(){
+  $("qId").value="";$("qText").value="";
+  $("qAnswer").value="true";$("qExplanation").value="";
+  $("qPublished").checked=true;
+}
+async function adminLoad(){
+  if(!isAdmin)return;
+  const {data,error}=await db.from("questions").select("*").order("id");
+  if(error){say("adminMsg","문제 조회 실패: "+error.message,true);return;}
+  $("adminList").innerHTML=(data||[]).map(q=>`
+    <div class="card">
+      <strong>${esc(q.question)}</strong>
+      <p>정답: ${q.correct_answer?"O":"X"} · ${q.published?"공개":"비공개"}</p>
+      <button class="editQ" data-id="${esc(q.id)}">수정</button>
+      <button class="deleteQ" data-id="${esc(q.id)}">삭제</button>
+    </div>`).join("");
+  $("adminList").querySelectorAll(".editQ").forEach(b=>{
+    b.onclick=()=>{
+      const q=data.find(x=>String(x.id)===b.dataset.id);
+      $("qId").value=q.id;$("qText").value=q.question;
+      $("qAnswer").value=String(q.correct_answer);
+      $("qExplanation").value=q.explanation||"";
+      $("qPublished").checked=!!q.published;
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
+  });
+  $("adminList").querySelectorAll(".deleteQ").forEach(b=>{
+    b.onclick=async()=>{
+      if(!confirm("이 문제를 삭제할까요?"))return;
+      const {error}=await db.from("questions").delete().eq("id",b.dataset.id);
+      if(error){say("adminMsg","삭제 실패: "+error.message,true);return;}
+      say("adminMsg","문제를 삭제했어요.");
+      await adminLoad();await loadQuestions();
+    };
+  });
+}
+async function saveQuestion(){
+  if(!isAdmin)return say("adminMsg","관리자 권한이 필요해요.",true);
+  const question=$("qText").value.trim();
+  if(!question)return say("adminMsg","문제를 입력해 주세요.",true);
+  const row={
+    question,
+    correct_answer:$("qAnswer").value==="true",
+    explanation:$("qExplanation").value.trim(),
+    published:$("qPublished").checked
+  };
+  const id=$("qId").value;
+  const result=id
+    ?await db.from("questions").update(row).eq("id",id)
+    :await db.from("questions").insert(row);
+  if(result.error)return say("adminMsg","저장 실패: "+result.error.message,true);
+  say("adminMsg","문제를 저장했어요.");
+  clearQuestion();await adminLoad();await loadQuestions();
+}
+async function init(){
+  if(!validConfig){
+    $("intro").textContent="Supabase 연결 정보를 먼저 입력해야 해요.";
+    return;
+  }
+  try{
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    guestToken=localStorage.getItem("ox_guest")||crypto.randomUUID();
+    localStorage.setItem("ox_guest",guestToken);
+    const {data,error}=await db.auth.getSession();
+    if(error)throw error;
+    user=data.session?.user||null;
+    db.auth.onAuthStateChange((_event,session)=>{
+      user=session?.user||null;
+      setTimeout(async()=>{await refreshUser();},0);
+    });
+    await refreshUser();await loadQuestions();
+  }catch(e){say("message","초기화 실패: "+e.message,true);}
+}
+$("navQuiz").onclick=()=>show("quiz");
+$("navAuth").onclick=()=>show("auth");
+$("navHistory").onclick=async()=>{show("history");await loadHistory();};
+$("navAdmin").onclick=async()=>{if(isAdmin){show("admin");await adminLoad();}};
+$("logout").onclick=async()=>{await db.auth.signOut();show("quiz");};
+$("signup").onclick=signup;
+$("login").onclick=login;
+$("submit").onclick=submitQuiz;
+$("reloadHistory").onclick=loadHistory;
+$("saveQuestion").onclick=saveQuestion;
+$("clearQuestion").onclick=clearQuestion;
+init();
+</script>
+</body>
+</html>
