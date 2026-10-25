@@ -4,29 +4,213 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>1등급 생윤</title>
+<meta name="theme-color" content="#253b67">
+<title>1등급 생윤 OX 퀴즈</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f5fa;color:#20283b}
-header{background:#253b67;color:white;padding:18px}
-header h1{margin:0 0 12px}
+:root{
+  --navy:#253b67;
+  --navy2:#405783;
+  --bg:#f3f5fa;
+  --border:#e1e5ed;
+  --muted:#667085;
+  --green:#087443;
+  --red:#b42318;
+}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:#20283b;
+}
+header{
+  background:var(--navy);
+  color:white;
+  padding:18px;
+}
+header h1{margin:0 0 12px;font-size:24px}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-button{border:0;border-radius:9px;padding:11px 15px;background:#e7ecf7;color:#22365d;font-size:15px;cursor:pointer}
-nav button{background:#405783;color:white}
-button.active,button.primary{background:#253b67;color:white}
-button:disabled{opacity:.5;cursor:not-allowed}
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px 15px;
+  background:#e7ecf7;
+  color:#22365d;
+  font-size:15px;
+  cursor:pointer;
+  transition:background .15s,transform .15s;
+}
+button:active{transform:scale(.98)}
+nav button{background:var(--navy2);color:white}
+button.active,button.primary{background:var(--navy);color:white}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
 main{max-width:760px;margin:auto;padding:16px}
-section,.card{background:white;padding:18px;border-radius:14px;margin-bottom:14px;box-shadow:0 2px 10px #1720330c}
-input,textarea,select{width:100%;padding:12px;border:1px solid #cbd2df;border-radius:8px;margin:6px 0 12px;font-size:16px}
-textarea{min-height:85px}
+section,.card{
+  background:white;
+  padding:18px;
+  border-radius:14px;
+  margin-bottom:14px;
+  box-shadow:0 2px 10px #1720330c;
+}
 .hidden{display:none!important}
-.muted{color:#667085;font-size:14px}
+.muted{color:var(--muted);font-size:14px;line-height:1.6}
 .msg{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}
-.good{color:#087443}.bad{color:#b42318}
+.good{color:var(--green)}
+.bad{color:var(--red)}
+input,textarea,select{
+  width:100%;
+  padding:12px;
+  border:1px solid #cbd2df;
+  border-radius:8px;
+  margin:6px 0 12px;
+  font-size:16px;
+}
+textarea{min-height:85px}
+label{line-height:1.7}
+button:focus-visible,input:focus-visible,textarea:focus-visible,
+select:focus-visible{
+  outline:3px solid #9db9ef;
+  outline-offset:2px;
+}
+.quiz-setup{padding:20px 0 8px}
+.count-options{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:8px;
+  margin:14px 0;
+}
+.count-btn{
+  padding:13px 4px;
+  border:1px solid var(--border);
+  background:#fff;
+  font-weight:700;
+}
+.count-btn.selected{
+  background:var(--navy);
+  color:#fff;
+  border-color:var(--navy);
+}
+.full-btn{width:100%;margin-top:8px}
+.quiz-panel{padding:20px 0 4px}
+.progress-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.progress-track{
+  height:8px;
+  background:#e8edf6;
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:24px;
+}
+.progress-fill{
+  width:0;
+  height:100%;
+  background:#4d70b3;
+  border-radius:20px;
+  transition:width .2s;
+}
+.question-number{
+  color:var(--navy2);
+  font-size:14px;
+  font-weight:700;
+  margin:0 0 12px;
+}
+.question-text{
+  font-size:22px;
+  line-height:1.65;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  margin:0 0 26px;
+  min-height:100px;
+}
+.ox-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ox-btn{
+  min-height:100px;
+  font-size:34px;
+  font-weight:800;
+  border:2px solid var(--border);
+  background:white;
+  color:var(--navy);
+  border-radius:16px;
+}
+.ox-btn.selected{
+  background:#edf2ff;
+  border-color:var(--navy);
+  box-shadow:0 0 0 2px #253b6712;
+}
+.ox-btn.selected-x{
+  background:#fff0ee;
+  border-color:var(--red);
+  color:var(--red);
+}
+.ox-btn .choice-caption{
+  display:block;
+  font-size:13px;
+  font-weight:500;
+  margin-top:5px;
+}
+.question-nav{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:24px;
+}
+.question-nav button{min-height:46px}
+.quiz-actions{margin-top:12px}
+.quiz-actions button{width:100%;min-height:48px}
+.unanswered{
+  color:var(--red);
+  font-size:13px;
+  margin-top:14px;
+}
+.question-dots{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:20px;
+}
+.question-dot{
+  width:34px;
+  height:34px;
+  padding:0;
+  border-radius:9px;
+  background:#eef1f7;
+  font-size:13px;
+}
+.question-dot.answered{background:#dce8ff}
+.question-dot.current{outline:2px solid var(--navy);outline-offset:1px}
+.question-dot.unanswered-dot{background:#fff0ee;color:var(--red)}
+.score-box{
+  background:#edf2ff;
+  border-radius:14px;
+  padding:24px 16px;
+  text-align:center;
+  margin:18px 0;
+}
+.score-number{font-size:38px;font-weight:800;color:var(--navy)}
+.score-sub{color:var(--muted);margin-top:6px}
+.result-item{border:1px solid var(--border);margin-top:12px}
+.result-item h3{font-size:16px;line-height:1.6}
+.result-answer{display:flex;gap:8px;flex-wrap:wrap;font-size:14px}
+.detail-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px}
 .answer{display:inline-flex;align-items:center;gap:5px;margin:10px 16px 0 0}
 .answer input{width:auto;margin:0}
-.detail-card{border:1px solid #e1e5ed;border-radius:10px;padding:14px;margin-top:12px}
+@media(max-width:480px){
+  header{padding:16px}
+  header h1{font-size:21px}
+  main{padding:12px}
+  section,.card{padding:15px}
+  .count-options{gap:5px}
+  .count-btn{font-size:13px;padding:12px 2px}
+  .question-text{font-size:20px;min-height:90px}
+  .ox-btn{min-height:88px}
+}
 </style>
 </head>
 <body>
@@ -46,23 +230,87 @@ textarea{min-height:85px}
 <main>
   <section id="auth" class="hidden">
     <h2>회원가입 / 로그인</h2>
-    <label>이메일 주소</label>
+    <label for="email">이메일 주소</label>
     <input id="email" type="email" placeholder="example@email.com" autocomplete="email">
-    <label>비밀번호</label>
+    <label for="password">비밀번호</label>
     <input id="password" type="password" placeholder="6자 이상" autocomplete="current-password">
     <button id="signup" class="primary">회원가입</button>
     <button id="login">로그인</button>
     <p class="muted">가입 확인 이메일이 필요한 경우 이메일을 확인해 주세요.</p>
-    <p id="authMsg" class="msg"></p>
+    <p id="authMsg" class="msg" aria-live="polite"></p>
   </section>
 
   <section id="quiz">
     <h2>OX 퀴즈</h2>
     <p id="intro" class="muted">문제를 불러오는 중...</p>
-    <div id="qs"></div>
-    <button id="submit" class="primary">답안 제출</button>
-    <div id="result"></div>
-    <p id="message" class="msg"></p>
+
+    <div id="setup" class="quiz-setup">
+      <h3>몇 문제를 풀까요?</h3>
+      <p class="muted">공개된 문제 중에서 무작위로 출제합니다.</p>
+      <div class="count-options" id="countOptions">
+        <button class="count-btn selected" data-count="5">5문제</button>
+        <button class="count-btn" data-count="10">10문제</button>
+        <button class="count-btn" data-count="15">15문제</button>
+        <button class="count-btn" data-count="20">20문제</button>
+        <button class="count-btn" data-count="25">25문제</button>
+      </div>
+      <p id="availableInfo" class="muted"></p>
+      <button id="startQuiz" class="primary full-btn">퀴즈 시작하기</button>
+      <p id="message" class="msg" aria-live="polite"></p>
+    </div>
+
+    <div id="play" class="quiz-panel hidden">
+      <div class="progress-head">
+        <span id="progressLabel">1 / 5번</span>
+        <span id="answeredLabel">답변 0 / 5</span>
+      </div>
+      <div
+        class="progress-track"
+        id="progressTrack"
+        role="progressbar"
+        aria-label="퀴즈 진행률"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+
+      <p id="questionNumber" class="question-number">QUESTION 01</p>
+      <h3 id="questionText" class="question-text"></h3>
+
+      <div class="ox-options">
+        <button id="chooseO" class="ox-btn" aria-pressed="false">
+          O<span class="choice-caption">옳다</span>
+        </button>
+        <button id="chooseX" class="ox-btn" aria-pressed="false">
+          X<span class="choice-caption">옳지 않다</span>
+        </button>
+      </div>
+
+      <div class="question-dots" id="questionDots" aria-label="문항 바로 이동"></div>
+
+      <div class="question-nav">
+        <button id="prevQuestion">← 이전 문제</button>
+        <button id="nextQuestion" class="primary">다음 문제 →</button>
+      </div>
+      <div class="quiz-actions">
+        <button id="submit" class="primary hidden">최종 제출 및 채점</button>
+      </div>
+      <p id="playMessage" class="msg" aria-live="polite"></p>
+    </div>
+
+    <div id="result" class="hidden">
+      <h2>🎉 퀴즈 결과</h2>
+      <div class="score-box">
+        <div class="score-number" id="scoreNumber">0 / 5</div>
+        <div id="scorePercent" class="score-sub">정답률 0%</div>
+        <p id="scoreComment"></p>
+      </div>
+      <p id="saveStatus" class="msg" aria-live="polite"></p>
+      <h3>문제별 정답 및 해설</h3>
+      <div id="resultDetails"></div>
+      <button id="retryQuiz" class="primary full-btn">다시 퀴즈 풀기</button>
+    </div>
   </section>
 
   <section id="history" class="hidden">
@@ -87,14 +335,14 @@ textarea{min-height:85px}
     <h2>문제 관리</h2>
     <p class="muted">관리자만 문제를 추가하거나 수정·삭제할 수 있어요.</p>
     <input id="qId" type="hidden">
-    <label>문제</label>
+    <label for="qText">문제</label>
     <textarea id="qText" placeholder="문제를 입력하세요"></textarea>
-    <label>정답</label>
+    <label for="qAnswer">정답</label>
     <select id="qAnswer">
       <option value="true">O</option>
       <option value="false">X</option>
     </select>
-    <label>해설</label>
+    <label for="qExplanation">해설</label>
     <textarea id="qExplanation" placeholder="정답 해설"></textarea>
     <label><input id="qPublished" type="checkbox" checked style="width:auto"> 공개</label>
     <p>
@@ -121,7 +369,13 @@ let db = null;
 let user = null;
 let isAdmin = false;
 let questions = [];
+let quizQuestions = [];
+let answers = [];
+let currentIndex = 0;
+let selectedCount = 5;
+let quizSubmitted = false;
 let guestToken = "";
+let submissionInProgress = false;
 
 function say(id, msg, isError = false) {
   $(id).textContent = msg;
@@ -144,6 +398,15 @@ function show(id) {
   Object.entries(navMap).forEach(([nav, target]) => {
     $(nav).classList.toggle("active", target === id);
   });
+}
+
+function shuffle(list) {
+  const result = [...list];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 async function refreshUser() {
@@ -170,6 +433,7 @@ async function refreshUser() {
 
 async function loadQuestions() {
   $("intro").textContent = "문제를 불러오는 중...";
+  $("startQuiz").disabled = true;
 
   const { data, error } = await db.from("questions")
     .select("id,question,correct_answer,explanation,published")
@@ -178,27 +442,133 @@ async function loadQuestions() {
 
   if (error) {
     $("intro").textContent = "문제 조회에 실패했어요.";
+    $("availableInfo").textContent = "";
     say("message", "문제 불러오기 실패: " + error.message, true);
     return;
   }
 
   questions = data || [];
-  $("intro").textContent = questions.length + "문제";
+  $("intro").textContent = "랜덤 OX 퀴즈";
+  $("availableInfo").textContent =
+    "현재 공개된 문제: " + questions.length + "개";
 
-  $("qs").innerHTML = questions.map((q, i) => `
-    <div class="card">
-      <strong>${i + 1}. ${esc(q.question)}</strong><br>
-      <label class="answer">
-        <input type="radio" name="q${esc(q.id)}" value="true"> O
-      </label>
-      <label class="answer">
-        <input type="radio" name="q${esc(q.id)}" value="false"> X
-      </label>
-    </div>
+  document.querySelectorAll(".count-btn").forEach(button => {
+    const count = Number(button.dataset.count);
+    button.disabled = questions.length < count;
+    button.classList.toggle("selected", count === selectedCount);
+    button.setAttribute("aria-pressed", String(count === selectedCount));
+  });
+
+  $("startQuiz").disabled = questions.length < selectedCount;
+
+  if (questions.length === 0) {
+    say("message", "현재 공개된 문제가 없습니다.", true);
+  } else if (questions.length < 5) {
+    say("message",
+      "퀴즈를 시작하려면 공개된 문제가 최소 5개 필요해요.", true);
+  } else {
+    $("message").textContent = "";
+  }
+}
+
+function startQuiz() {
+  if (questions.length < selectedCount) {
+    return say("message", "선택한 문제 수만큼 공개된 문제가 필요해요.", true);
+  }
+
+  quizQuestions = shuffle(questions).slice(0, selectedCount);
+  answers = Array(selectedCount).fill(null);
+  currentIndex = 0;
+  quizSubmitted = false;
+  submissionInProgress = false;
+
+  $("setup").classList.add("hidden");
+  $("play").classList.remove("hidden");
+  $("result").classList.add("hidden");
+  $("submit").classList.add("hidden");
+  $("playMessage").textContent = "";
+
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (!quizQuestions.length || quizSubmitted) return;
+
+  const q = quizQuestions[currentIndex];
+  const answer = answers[currentIndex];
+  const number = currentIndex + 1;
+
+  $("progressLabel").textContent = number + " / " + selectedCount + "번";
+  $("answeredLabel").textContent =
+    "답변 " + answers.filter(a => a !== null).length + " / " + selectedCount;
+
+  const progress = Math.round(number / selectedCount * 100);
+  $("progressFill").style.width = progress + "%";
+  $("progressTrack").setAttribute("aria-valuenow", String(progress));
+
+  $("questionNumber").textContent =
+    "QUESTION " + String(number).padStart(2, "0");
+  $("questionText").textContent = q.question;
+
+  $("chooseO").classList.toggle("selected", answer === true);
+  $("chooseO").classList.remove("selected-x");
+  $("chooseO").setAttribute("aria-pressed", String(answer === true));
+
+  $("chooseX").classList.toggle("selected-x", answer === false);
+  $("chooseX").classList.toggle("selected", answer === false);
+  $("chooseX").setAttribute("aria-pressed", String(answer === false));
+
+  $("prevQuestion").disabled = currentIndex === 0;
+
+  const isLast = currentIndex === selectedCount - 1;
+  $("nextQuestion").classList.toggle("hidden", isLast);
+  $("submit").classList.toggle("hidden", !isLast);
+
+  $("submit").disabled = submissionInProgress;
+
+  $("questionDots").innerHTML = answers.map((a, i) => `
+    <button type="button"
+      class="question-dot ${a !== null ? "answered" : "unanswered-dot"} ${i === currentIndex ? "current" : ""}"
+      data-index="${i}"
+      aria-label="${i + 1}번 문제${a !== null ? ", 답변 완료" : ", 미응답"}"
+      aria-current="${i === currentIndex ? "step" : "false"}">${i + 1}</button>
   `).join("");
 
-  $("result").innerHTML = "";
-  $("message").textContent = "";
+  $("questionDots").querySelectorAll("button").forEach(button => {
+    button.addEventListener("click", () => {
+      currentIndex = Number(button.dataset.index);
+      $("playMessage").textContent = "";
+      renderQuestion();
+    });
+  });
+}
+
+function chooseAnswer(value) {
+  if (quizSubmitted || submissionInProgress) return;
+
+  answers[currentIndex] = value;
+  $("playMessage").textContent = "";
+  renderQuestion();
+}
+
+function nextQuestion() {
+  if (currentIndex >= selectedCount - 1) return;
+
+  if (answers[currentIndex] === null) {
+    return say("playMessage", "O 또는 X를 선택해 주세요.", true);
+  }
+
+  currentIndex++;
+  $("playMessage").textContent = "";
+  renderQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex <= 0) return;
+
+  currentIndex--;
+  $("playMessage").textContent = "";
+  renderQuestion();
 }
 
 async function signup() {
@@ -219,6 +589,8 @@ async function signup() {
   say("authMsg", data.session
     ? "가입 완료! 로그인되었습니다."
     : "가입 요청 완료! 이메일 확인이 필요할 수 있어요.");
+
+  if (data.session) show("quiz");
 }
 
 async function login() {
@@ -237,63 +609,138 @@ async function login() {
   show("quiz");
 }
 
+function renderResults(results, score, total) {
+  const percent = total ? Math.round(score / total * 100) : 0;
+
+  $("scoreNumber").textContent = score + " / " + total;
+  $("scorePercent").textContent = "정답률 " + percent + "%";
+
+  $("scoreComment").textContent =
+    percent === 100 ? "완벽해요! 모든 문제를 맞혔어요. 🎉" :
+    percent >= 80 ? "훌륭해요! 조금만 더 공부하면 1등급이에요." :
+    percent >= 60 ? "좋아요! 틀린 문제의 해설을 복습해 보세요." :
+    "해설을 확인하고 다시 도전해 보세요!";
+
+  $("resultDetails").innerHTML = results.map((r, i) => {
+    const q = quizQuestions.find(
+      item => String(item.id) === String(r.question_id)
+    ) || quizQuestions[i];
+
+    const chosen = r.chosen_answer === true ? "O" :
+      r.chosen_answer === false ? "X" :
+      answers[i] === true ? "O" : "X";
+
+    const correct = r.correct_answer === true ? "O" : "X";
+
+    return `
+      <div class="card result-item">
+        <p class="question-number">QUESTION ${String(i + 1).padStart(2, "0")}</p>
+        <h3>${esc(q?.question || "문제")}</h3>
+        <div class="result-answer">
+          <span class="${r.is_correct ? "good" : "bad"}">
+            <strong>${r.is_correct ? "✓ 정답" : "✗ 오답"}</strong>
+          </span>
+          <span>내 답: ${chosen}</span>
+          <span>정답: ${correct}</span>
+        </div>
+        <p><strong>해설</strong></p>
+        <p>${esc(r.explanation || q?.explanation || "등록된 해설이 없습니다.")}</p>
+      </div>`;
+  }).join("");
+
+  $("play").classList.add("hidden");
+  $("setup").classList.add("hidden");
+  $("result").classList.remove("hidden");
+}
+
 async function submitQuiz() {
-  if (!questions.length)
-    return say("message", "제출할 문제가 없어요.", true);
+  if (quizSubmitted || submissionInProgress) return;
 
-  const answers = [];
-
-  for (const q of questions) {
-    const selected = document.querySelector(
-      `input[name="q${CSS.escape(String(q.id))}"]:checked`
-    );
-
-    if (!selected)
-      return say("message", "모든 문제에 답해 주세요.", true);
-
-    answers.push({
-      question_id: q.id,
-      answer: selected.value === "true"
-    });
+  if (answers.some(a => a === null)) {
+    const missing = answers.findIndex(a => a === null);
+    currentIndex = missing;
+    renderQuestion();
+    return say("playMessage",
+      (missing + 1) + "번 문제에 답하지 않았어요. 모든 문제에 답해 주세요.",
+      true);
   }
 
+  if (!confirm("답안을 제출하고 채점할까요? 제출 후에는 답을 바꿀 수 없어요.")) {
+    return;
+  }
+
+  submissionInProgress = true;
   $("submit").disabled = true;
+  $("prevQuestion").disabled = true;
+  $("nextQuestion").disabled = true;
+  $("chooseO").disabled = true;
+  $("chooseX").disabled = true;
+  say("playMessage", "채점 및 기록 저장 중...");
+
+  const payload = quizQuestions.map((q, i) => ({
+    question_id: q.id,
+    answer: answers[i]
+  }));
 
   try {
     const { data, error } = await db.rpc("submit_quiz", {
-      p_answers: answers,
+      p_answers: payload,
       p_guest_token: user ? null : guestToken
     });
 
     if (error) throw error;
 
-    $("result").innerHTML =
-      `<h3>점수 ${esc(data.score)}/${esc(data.total)}</h3>` +
-      (data.results || []).map((r, i) => {
-        const q = questions.find(
-          item => String(item.id) === String(r.question_id)
-        );
+    if (!data || !Array.isArray(data.results)) {
+      throw new Error("채점 결과 형식이 예상과 달라요. Supabase RPC 응답을 확인해 주세요.");
+    }
 
-        return `
-          <div class="card">
-            <strong>${i + 1}. ${esc(q?.question || "문제")}</strong>
-            <p class="${r.is_correct ? "good" : "bad"}">
-              ${r.is_correct ? "정답" : "오답"}
-              · 내 답 ${r.chosen_answer ? "O" : "X"}
-              · 정답 ${r.correct_answer ? "O" : "X"}
-            </p>
-            <p>해설: ${esc(r.explanation || q?.explanation || "해설 없음")}</p>
-          </div>`;
-      }).join("");
+    quizSubmitted = true;
 
-    say("message", user
-      ? "회원 기록이 저장됐어요."
-      : "비회원 기록이 저장됐어요.");
+    const score = Number(data.score);
+    const total = Number(data.total);
+
+    renderResults(
+      data.results,
+      Number.isFinite(score) ? score : 0,
+      Number.isFinite(total) ? total : quizQuestions.length
+    );
+
+    say("saveStatus", user
+      ? "회원 기록 저장 요청이 완료됐어요."
+      : "비회원 기록 저장 요청이 완료됐어요.");
+
   } catch (e) {
-    say("message", "제출 실패: " + e.message, true);
-  } finally {
+    submissionInProgress = false;
     $("submit").disabled = false;
+    $("prevQuestion").disabled = currentIndex === 0;
+    $("nextQuestion").disabled = false;
+    $("chooseO").disabled = false;
+    $("chooseX").disabled = false;
+
+    say("playMessage", "제출 실패: " + (e.message || e), true);
   }
+}
+
+function resetQuiz() {
+  quizQuestions = [];
+  answers = [];
+  currentIndex = 0;
+  quizSubmitted = false;
+  submissionInProgress = false;
+
+  $("result").classList.add("hidden");
+  $("play").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  $("message").textContent = "";
+  $("playMessage").textContent = "";
+  $("saveStatus").textContent = "";
+
+  $("chooseO").disabled = false;
+  $("chooseX").disabled = false;
+  $("prevQuestion").disabled = false;
+  $("nextQuestion").disabled = false;
+
+  loadQuestions();
 }
 
 async function loadHistory() {
@@ -351,19 +798,19 @@ async function loadAttemptDetails(attemptId) {
   target.textContent = "문제와 해설을 불러오는 중...";
 
   try {
-    const { data: answers, error: answerError } = await db
+    const { data: answersData, error: answerError } = await db
       .from("attempt_answers")
       .select("*")
       .eq("attempt_id", attemptId);
 
     if (answerError) throw answerError;
 
-    if (!answers?.length) {
+    if (!answersData?.length) {
       target.textContent = "상세 기록이 없습니다.";
       return;
     }
 
-    const ids = [...new Set(answers.map(a => a.question_id))];
+    const ids = [...new Set(answersData.map(a => a.question_id))];
 
     const { data: qs, error: questionError } = await db
       .from("questions")
@@ -376,7 +823,7 @@ async function loadAttemptDetails(attemptId) {
       (qs || []).map(q => [String(q.id), q])
     );
 
-    target.innerHTML = answers.map((a, i) => {
+    target.innerHTML = answersData.map((a, i) => {
       const q = questionMap.get(String(a.question_id));
       const chosen = a.chosen_answer === true ? "O" :
         a.chosen_answer === false ? "X" : "미확인";
@@ -574,6 +1021,7 @@ async function init() {
   }
 }
 
+/* 화면 이동 */
 $("navQuiz").onclick = () => show("quiz");
 $("navAuth").onclick = () => show("auth");
 
@@ -587,14 +1035,41 @@ $("navRanking").onclick = async () => {
   await loadRanking();
 };
 
-$("reloadRanking").onclick = loadRanking;
-$("reloadHistory").onclick = loadHistory;
-
 $("navAdmin").onclick = async () => {
   if (!isAdmin) return;
   show("admin");
   await adminLoad();
 };
+
+/* 문제 수 선택 */
+$("countOptions").querySelectorAll(".count-btn").forEach(button => {
+  button.onclick = () => {
+    if (button.disabled) return;
+
+    selectedCount = Number(button.dataset.count);
+
+    $("countOptions").querySelectorAll(".count-btn").forEach(b => {
+      const selected = b === button;
+      b.classList.toggle("selected", selected);
+      b.setAttribute("aria-pressed", String(selected));
+    });
+
+    $("startQuiz").disabled = questions.length < selectedCount;
+    $("message").textContent = "";
+  };
+});
+
+/* 퀴즈 진행 */
+$("startQuiz").onclick = startQuiz;
+$("chooseO").onclick = () => chooseAnswer(true);
+$("chooseX").onclick = () => chooseAnswer(false);
+$("prevQuestion").onclick = prevQuestion;
+$("nextQuestion").onclick = nextQuestion;
+$("submit").onclick = submitQuiz;
+$("retryQuiz").onclick = resetQuiz;
+
+$("reloadRanking").onclick = loadRanking;
+$("reloadHistory").onclick = loadHistory;
 
 $("logout").onclick = async () => {
   const { error } = await db.auth.signOut();
@@ -611,7 +1086,6 @@ $("logout").onclick = async () => {
 
 $("signup").onclick = signup;
 $("login").onclick = login;
-$("submit").onclick = submitQuiz;
 $("saveQuestion").onclick = saveQuestion;
 $("clearQuestion").onclick = clearQuestion;
 
