@@ -8,10 +8,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,sans-serif;background:#f3f5fa;color:#20283b}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f5fa;color:#20283b}
 header{background:#253b67;color:white;padding:18px}
 header h1{margin:0 0 12px}
-nav{display:flex;gap:8px;flex-wrap:wrap}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 button{border:0;border-radius:9px;padding:11px 15px;background:#e7ecf7;color:#22365d;font-size:15px;cursor:pointer}
 nav button{background:#405783;color:white}
 button.active,button.primary{background:#253b67;color:white}
@@ -33,7 +33,7 @@ textarea{min-height:85px}
 <header>
   <h1>⭕ 1등급 생윤 OX 퀴즈</h1>
   <div id="who">연결 중...</div>
-  <nav style="margin-top:14px">
+  <nav>
     <button id="navQuiz" class="active">퀴즈</button>
     <button id="navAuth">로그인 / 가입</button>
     <button id="navHistory">기록</button>
@@ -107,15 +107,21 @@ textarea{min-height:85px}
 </main>
 
 <script>
+"use strict";
+
 const SUPABASE_URL = "https://lwxamqqprowvfymsezkq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_MAn1jK_Yfobh_Aszlsk2XQ_4p_sBbkQ";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
 }[c]));
 
-let db, user = null, isAdmin = false, questions = [], guestToken = "";
+let db = null;
+let user = null;
+let isAdmin = false;
+let questions = [];
+let guestToken = "";
 
 function say(id, msg, isError = false) {
   $(id).textContent = msg;
@@ -145,12 +151,15 @@ async function refreshUser() {
 
   if (user) {
     const { data, error } = await db.from("profiles")
-      .select("username,role").eq("id", user.id).maybeSingle();
+      .select("username,role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (error) console.error(error);
+    if (error) console.error("프로필 조회 오류:", error.message);
 
     isAdmin = data?.role === "admin";
-    $("who").textContent = "로그인: " + (data?.username || user.email || "회원");
+    $("who").textContent =
+      "로그인: " + (data?.username || user.email || "회원");
   } else {
     $("who").textContent = "비회원";
   }
@@ -160,11 +169,15 @@ async function refreshUser() {
 }
 
 async function loadQuestions() {
+  $("intro").textContent = "문제를 불러오는 중...";
+
   const { data, error } = await db.from("questions")
     .select("id,question,correct_answer,explanation,published")
-    .eq("published", true).order("id");
+    .eq("published", true)
+    .order("id");
 
   if (error) {
+    $("intro").textContent = "문제 조회에 실패했어요.";
     say("message", "문제 불러오기 실패: " + error.message, true);
     return;
   }
@@ -176,10 +189,10 @@ async function loadQuestions() {
     <div class="card">
       <strong>${i + 1}. ${esc(q.question)}</strong><br>
       <label class="answer">
-        <input type="radio" name="q${q.id}" value="true"> O
+        <input type="radio" name="q${esc(q.id)}" value="true"> O
       </label>
       <label class="answer">
-        <input type="radio" name="q${q.id}" value="false"> X
+        <input type="radio" name="q${esc(q.id)}" value="false"> X
       </label>
     </div>
   `).join("");
@@ -200,7 +213,8 @@ async function signup() {
 
   const { data, error } = await db.auth.signUp({ email, password });
 
-  if (error) return say("authMsg", "가입 실패: " + error.message, true);
+  if (error)
+    return say("authMsg", "가입 실패: " + error.message, true);
 
   say("authMsg", data.session
     ? "가입 완료! 로그인되었습니다."
@@ -216,17 +230,23 @@ async function login() {
 
   const { error } = await db.auth.signInWithPassword({ email, password });
 
-  if (error) return say("authMsg", "로그인 실패: " + error.message, true);
+  if (error)
+    return say("authMsg", "로그인 실패: " + error.message, true);
 
   say("authMsg", "로그인 성공!");
   show("quiz");
 }
 
 async function submitQuiz() {
+  if (!questions.length)
+    return say("message", "제출할 문제가 없어요.", true);
+
   const answers = [];
 
   for (const q of questions) {
-    const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+    const selected = document.querySelector(
+      `input[name="q${CSS.escape(String(q.id))}"]:checked`
+    );
 
     if (!selected)
       return say("message", "모든 문제에 답해 주세요.", true);
@@ -236,9 +256,6 @@ async function submitQuiz() {
       answer: selected.value === "true"
     });
   }
-
-  if (!answers.length)
-    return say("message", "아직 공개된 문제가 없어요.", true);
 
   $("submit").disabled = true;
 
@@ -253,7 +270,10 @@ async function submitQuiz() {
     $("result").innerHTML =
       `<h3>점수 ${esc(data.score)}/${esc(data.total)}</h3>` +
       (data.results || []).map((r, i) => {
-        const q = questions.find(q => String(q.id) === String(r.question_id));
+        const q = questions.find(
+          item => String(item.id) === String(r.question_id)
+        );
+
         return `
           <div class="card">
             <strong>${i + 1}. ${esc(q?.question || "문제")}</strong>
@@ -266,14 +286,15 @@ async function submitQuiz() {
           </div>`;
       }).join("");
 
-    say("message", user ? "회원 기록이 저장됐어요." : "비회원 기록이 저장됐어요.");
+    say("message", user
+      ? "회원 기록이 저장됐어요."
+      : "비회원 기록이 저장됐어요.");
   } catch (e) {
     say("message", "제출 실패: " + e.message, true);
   } finally {
     $("submit").disabled = false;
   }
 }
-
 
 async function loadHistory() {
   if (!user) {
@@ -283,8 +304,7 @@ async function loadHistory() {
 
   $("historyList").textContent = "기록을 불러오는 중...";
 
-  const { data, error } = await db
-    .from("attempts")
+  const { data, error } = await db.from("attempts")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -295,7 +315,7 @@ async function loadHistory() {
     return;
   }
 
-  if (!data || data.length === 0) {
+  if (!data?.length) {
     $("historyList").textContent = "저장된 기록이 없습니다.";
     return;
   }
@@ -312,39 +332,15 @@ async function loadHistory() {
   `).join("");
 
   $("historyList").querySelectorAll(".detailBtn").forEach(button => {
-    button.addEventListener("click", async () => {
-      await loadAttemptDetails(button.dataset.id);
+    button.addEventListener("click", () => {
+      loadAttemptDetails(button.dataset.id);
     });
-  });
-}
-
-
-  $("historyList").textContent = "기록을 불러오는 중...";
-
-  const { data, error } = await db.from("attempts").select("*")
-    .eq("user_id", user.id).order("created_at", { ascending: false }).limit(100);
-
-  if (error) {
-    $("historyList").textContent = "기록 조회 실패: " + error.message;
-    return;
-  }
-
-  $("historyList").innerHTML = (data || []).map(a => `
-    <div class="card">
-      <strong>${esc(a.score)} / ${esc(a.total)}점</strong>
-      <p>${esc(a.created_at ? new Date(a.created_at).toLocaleString() : "날짜 없음")}</p>
-      <button class="detailBtn" data-id="${esc(a.id)}">문제와 해설 보기</button>
-      <div id="detail${esc(a.id)}"></div>
-    </div>
-  `).join("") || "저장된 기록이 없습니다.";
-
-  $("historyList").querySelectorAll(".detailBtn").forEach(b => {
-    b.onclick = () => loadAttemptDetails(b.dataset.id);
   });
 }
 
 async function loadAttemptDetails(attemptId) {
   const target = $("detail" + attemptId);
+  if (!target) return;
 
   if (target.dataset.loaded === "true") {
     target.innerHTML = "";
@@ -376,13 +372,14 @@ async function loadAttemptDetails(attemptId) {
 
     if (questionError) throw questionError;
 
-    const questionMap = new Map((qs || []).map(q => [String(q.id), q]));
+    const questionMap = new Map(
+      (qs || []).map(q => [String(q.id), q])
+    );
 
     target.innerHTML = answers.map((a, i) => {
       const q = questionMap.get(String(a.question_id));
       const chosen = a.chosen_answer === true ? "O" :
         a.chosen_answer === false ? "X" : "미확인";
-
       const correct = q
         ? (q.correct_answer === true ? "O" : "X")
         : "문제 정보 없음";
@@ -417,9 +414,12 @@ function clearQuestion() {
 async function adminLoad() {
   if (!isAdmin) return;
 
-  const { data, error } = await db.from("questions").select("*").order("id");
+  const { data, error } = await db.from("questions")
+    .select("*")
+    .order("id");
 
-  if (error) return say("adminMsg", "문제 조회 실패: " + error.message, true);
+  if (error)
+    return say("adminMsg", "문제 조회 실패: " + error.message, true);
 
   $("adminList").innerHTML = (data || []).map(q => `
     <div class="card">
@@ -430,9 +430,11 @@ async function adminLoad() {
     </div>
   `).join("");
 
-  $("adminList").querySelectorAll(".editQ").forEach(b => {
-    b.onclick = () => {
-      const q = data.find(x => String(x.id) === b.dataset.id);
+  $("adminList").querySelectorAll(".editQ").forEach(button => {
+    button.onclick = () => {
+      const q = data.find(x => String(x.id) === button.dataset.id);
+      if (!q) return;
+
       $("qId").value = q.id;
       $("qText").value = q.question;
       $("qAnswer").value = String(q.correct_answer);
@@ -442,12 +444,16 @@ async function adminLoad() {
     };
   });
 
-  $("adminList").querySelectorAll(".deleteQ").forEach(b => {
-    b.onclick = async () => {
+  $("adminList").querySelectorAll(".deleteQ").forEach(button => {
+    button.onclick = async () => {
       if (!confirm("이 문제를 삭제할까요?")) return;
 
-      const { error } = await db.from("questions").delete().eq("id", b.dataset.id);
-      if (error) return say("adminMsg", "삭제 실패: " + error.message, true);
+      const { error } = await db.from("questions")
+        .delete()
+        .eq("id", button.dataset.id);
+
+      if (error)
+        return say("adminMsg", "삭제 실패: " + error.message, true);
 
       say("adminMsg", "문제를 삭제했어요.");
       await adminLoad();
@@ -457,10 +463,12 @@ async function adminLoad() {
 }
 
 async function saveQuestion() {
-  if (!isAdmin) return say("adminMsg", "관리자 권한이 필요해요.", true);
+  if (!isAdmin)
+    return say("adminMsg", "관리자 권한이 필요해요.", true);
 
   const question = $("qText").value.trim();
-  if (!question) return say("adminMsg", "문제를 입력해 주세요.", true);
+  if (!question)
+    return say("adminMsg", "문제를 입력해 주세요.", true);
 
   const row = {
     question,
@@ -481,6 +489,17 @@ async function saveQuestion() {
   clearQuestion();
   await adminLoad();
   await loadQuestions();
+}
+
+function renderRanking(rows) {
+  if (!rows.length) return "<p>아직 기록이 없습니다.</p>";
+
+  return `<ol>${rows.map(r => `
+    <li style="margin:10px 0">
+      <strong>${esc(r.username)}</strong>
+      — 정답 ${esc(r.total_score)}개 · 정답률 ${esc(r.accuracy)}%
+    </li>
+  `).join("")}</ol>`;
 }
 
 async function loadRanking() {
@@ -504,42 +523,10 @@ async function loadRanking() {
     return;
   }
 
-  function anonymousName(id) {
-  const animals = [
-    "고래", "여우", "늑대", "토끼", "판다",
-    "수달", "호랑이", "펭귄", "다람쥐", "부엉이"
-  ];
-
-  let hash = 0;
-  const value = String(id ?? "");
-
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-  }
-
-  const animal = animals[hash % animals.length];
-  const number = String((hash * 7919) % 1000).padStart(3, "0");
-
-  return `익명${animal}${number}`;
-}
-
-function renderRanking(rows) {
-  if (!rows.length) {
-    return "<p>아직 기록이 없습니다.</p>";
-  }
-
-  return `<ol>${rows.map(r => `
-    <li style="margin:10px 0">
-      <strong>${esc(r.username)}</strong>
-      — 정답 ${esc(r.total_score)}개 · 정답률 ${esc(r.accuracy)}%
-    </li>
-  `).join("")}</ol>`;
-}
-
-
   $("overallRanking").innerHTML = renderRanking(
     (data || []).filter(r => r.ranking_type === "overall")
   );
+
   $("weeklyRanking").innerHTML = renderRanking(
     (data || []).filter(r => r.ranking_type === "weekly")
   );
@@ -547,10 +534,17 @@ function renderRanking(rows) {
 
 async function init() {
   try {
+    if (!window.supabase) {
+      throw new Error("Supabase 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
+    }
+
     db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    guestToken = localStorage.getItem("ox_guest") || crypto.randomUUID();
-    localStorage.setItem("ox_guest", guestToken);
+    guestToken = localStorage.getItem("ox_guest");
+    if (!guestToken) {
+      guestToken = crypto.randomUUID();
+      localStorage.setItem("ox_guest", guestToken);
+    }
 
     const { data, error } = await db.auth.getSession();
     if (error) throw error;
@@ -559,43 +553,65 @@ async function init() {
 
     db.auth.onAuthStateChange((_event, session) => {
       user = session?.user || null;
+
       setTimeout(async () => {
-        await refreshUser();
+        try {
+          await refreshUser();
+        } catch (e) {
+          console.error("로그인 상태 갱신 오류:", e);
+          $("who").textContent = "로그인 상태를 불러오지 못했어요.";
+        }
       }, 0);
     });
 
     await refreshUser();
     await loadQuestions();
   } catch (e) {
-    say("message", "초기화 실패: " + e.message, true);
+    $("who").textContent = "연결 실패";
+    $("intro").textContent = "초기화에 실패했어요.";
+    say("message", "초기화 실패: " + (e.message || e), true);
+    console.error("초기화 오류:", e);
   }
 }
 
 $("navQuiz").onclick = () => show("quiz");
 $("navAuth").onclick = () => show("auth");
+
 $("navHistory").onclick = async () => {
   show("history");
   await loadHistory();
 };
+
 $("navRanking").onclick = async () => {
   show("ranking");
   await loadRanking();
 };
+
 $("reloadRanking").onclick = loadRanking;
+$("reloadHistory").onclick = loadHistory;
+
 $("navAdmin").onclick = async () => {
-  if (isAdmin) {
-    show("admin");
-    await adminLoad();
-  }
+  if (!isAdmin) return;
+  show("admin");
+  await adminLoad();
 };
+
 $("logout").onclick = async () => {
-  await db.auth.signOut();
+  const { error } = await db.auth.signOut();
+
+  if (error) {
+    say("message", "로그아웃 실패: " + error.message, true);
+    return;
+  }
+
+  user = null;
+  await refreshUser();
   show("quiz");
 };
+
 $("signup").onclick = signup;
 $("login").onclick = login;
 $("submit").onclick = submitQuiz;
-$("reloadHistory").onclick = loadHistory;
 $("saveQuestion").onclick = saveQuestion;
 $("clearQuestion").onclick = clearQuestion;
 
