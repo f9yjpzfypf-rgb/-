@@ -9,7 +9,24 @@ body{font-family:-apple-system,sans-serif;background:#f4f6fb;color:#172033;margi
 const URL="https://lwxamqqprowvfymsezkq.supabase.co",KEY="sb_publishable_MAn1jK_Yfobh_Aszlsk2XQ_4p_sBbkQ",okConfig=!URL.startsWith("YOUR_")&&!KEY.startsWith("YOUR_"),$=x=>document.getElementById(x);let sb,user=null,admin=false,qs=[],guest="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const email=u=>u.toLowerCase()+"@accounts.oxquiz.invalid";const valid=u=>/^[a-zA-Z0-9_]{3,24}$/.test(u);
-function show(id){["auth","quiz","history","admin"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}
+
+function show(id) {
+  ["auth", "quiz", "history", "admin"].forEach(x => {
+    const el = $(x);
+    if (el) el.classList.toggle("hidden", x !== id);
+  });
+
+  ["navAuth", "navQuiz", "navHistory", "navAdmin"].forEach(x => {
+    const el = $(x);
+    if (el) el.classList.toggle("active", x === ({
+      auth: "navAuth",
+      quiz: "navQuiz",
+      history: "navHistory",
+      admin: "navAdmin"
+    })[id]);
+  });
+}
+
 async function refresh(){admin=false;if(user){let {data}=await sb.from("profiles").select("role,username").eq("id",user.id).maybeSingle();admin=data?.role==="admin";$("who").textContent="로그인: "+(data?.username||user.user_metadata?.username||"회원")+(admin?" (관리자)":"")}else $("who").textContent="비회원";$("navAdmin").classList.toggle("hidden",!admin);$("logout").classList.toggle("hidden",!user)}
 async function loadQs(){let {data,error}=await sb.from("questions").select("id,question").eq("published",true).order("id");if(error){$("intro").textContent=error.message;return}qs=data||[];$("intro").textContent=qs.length?qs.length+"문제":"공개된 문제가 없습니다."; $("qs").innerHTML=qs.map((q,i)=>`<div class="card"><p>${i+1}. ${esc(q.question)}</p><label><input type="radio" name="q${q.id}" value="true" style="width:auto"> O</label>　<label><input type="radio" name="q${q.id}" value="false" style="width:auto"> X</label></div>`).join("");$("result").innerHTML=""}
 async function init(){if(!okConfig){$("message").textContent="index.html에서 Supabase URL과 anon key를 설정하세요.";return}sb=window.supabase.createClient(URL,KEY);guest=localStorage.getItem("ox_guest")||crypto.randomUUID().replaceAll("-","");localStorage.setItem("ox_guest",guest);let {data:{session}}=await sb.auth.getSession();user=session?.user||null;sb.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;setTimeout(refresh,0)});await refresh();await loadQs()}
