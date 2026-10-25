@@ -530,7 +530,7 @@ function renderRanking(rows) {
 
   return `<ol>${rows.map(r => `
     <li style="margin:10px 0">
-      <strong>${esc(anonymousName(r.user_id))}</strong>
+      <strong>${esc(r.username)}</strong>
       — 정답 ${esc(r.total_score)}개 · 정답률 ${esc(r.accuracy)}%
     </li>
   `).join("")}</ol>`;
