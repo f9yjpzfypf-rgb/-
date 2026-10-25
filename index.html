@@ -287,6 +287,51 @@ async function saveQuestion(){
   say("adminMsg","문제를 저장했어요.");
   clearQuestion();await adminLoad();await loadQuestions();
 }
+async function loadRanking(){
+  if(!user){
+    $("overallRanking").textContent = "랭킹을 보려면 로그인해 주세요.";
+    $("weeklyRanking").textContent = "랭킹을 보려면 로그인해 주세요.";
+    $("rankingMsg").textContent = "";
+    return;
+  }
+
+  $("overallRanking").textContent = "불러오는 중...";
+  $("weeklyRanking").textContent = "불러오는 중...";
+  $("rankingMsg").textContent = "";
+
+  const { data, error } = await db.rpc("get_quiz_rankings");
+
+  if(error){
+    $("overallRanking").textContent = "랭킹을 불러오지 못했어요.";
+    $("weeklyRanking").textContent = "랭킹을 불러오지 못했어요.";
+    $("rankingMsg").textContent = error.message;
+    return;
+  }
+
+  function renderRanking(rows){
+    if(!rows.length){
+      return "<p>아직 기록이 없습니다.</p>";
+    }
+
+    return `<ol>
+      ${rows.map(r => `
+        <li style="margin:10px 0">
+          <strong>${esc(r.username)}</strong>
+          — 정답 ${r.total_score}개
+          · 정답률 ${r.accuracy}%
+        </li>
+      `).join("")}
+    </ol>`;
+  }
+
+  $("overallRanking").innerHTML = renderRanking(
+    data.filter(r => r.ranking_type === "overall")
+  );
+
+  $("weeklyRanking").innerHTML = renderRanking(
+    data.filter(r => r.ranking_type === "weekly")
+  );
+}
 async function init(){
   if(!validConfig){
     $("intro").textContent="Supabase 연결 정보를 먼저 입력해야 해요.";
