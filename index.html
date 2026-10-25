@@ -70,6 +70,21 @@ textarea{min-height:85px}
   </section>
 
   <section id="admin" class="hidden">
+  
+  <section id="ranking" class="hidden">
+    <h2>🏆 랭킹</h2>
+    <p class="muted">로그인한 회원만 랭킹에 표시됩니다.</p>
+
+    <h3>전체 누적 랭킹</h3>
+    <div id="overallRanking">불러오는 중...</div>
+
+    <h3>이번 주 랭킹</h3>
+    <div id="weeklyRanking">불러오는 중...</div>
+
+    <button id="reloadRanking" class="primary">랭킹 새로고침</button>
+    <p id="rankingMsg" class="msg"></p>
+  </section>
+
     <h2>문제 관리</h2>
     <p class="muted">관리자만 문제를 추가하거나 수정·삭제할 수 있어요.</p>
     <input id="qId" type="hidden">
