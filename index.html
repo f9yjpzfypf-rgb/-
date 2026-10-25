@@ -354,6 +354,8 @@ async function init(){
 $("navQuiz").onclick=()=>show("quiz");
 $("navAuth").onclick=()=>show("auth");
 $("navHistory").onclick=async()=>{show("history");await loadHistory();};
+$("navRanking").onclick=async()=>{show("ranking");await loadRanking();};
+$("reloadRanking").onclick=loadRanking;
 $("navAdmin").onclick=async()=>{if(isAdmin){show("admin");await adminLoad();}};
 $("logout").onclick=async()=>{await db.auth.signOut();show("quiz");};
 $("signup").onclick=signup;
