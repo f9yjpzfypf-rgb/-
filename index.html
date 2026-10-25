@@ -6,7 +6,7 @@ body{font-family:-apple-system,sans-serif;background:#f4f6fb;color:#172033;margi
 <section id="history" class="card hidden"><h2>내 기록</h2><p id="histIntro"></p><div id="hist"></div></section>
 <section id="admin" class="card hidden"><h2>문제 관리</h2><input id="editId" type="hidden"><label>문제</label><textarea id="qText"></textarea><label>정답</label><select id="qAnswer"><option value="true">O</option><option value="false">X</option></select><label>해설</label><textarea id="qExpl"></textarea><label><input id="pub" type="checkbox" checked style="width:auto"> 공개</label><button id="save">저장</button><button class="secondary" id="clear">새 문제</button><div id="adminList"></div></section><p id="message"></p></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
-const URL="YOUR_SUPABASE_PROJECT_URL",KEY="YOUR_SUPABASE_ANON_KEY",okConfig=!URL.startsWith("YOUR_")&&!KEY.startsWith("YOUR_"),$=x=>document.getElementById(x);let sb,user=null,admin=false,qs=[],guest="";
+const URL="https://lwxamqqprowvfymsezkq. supabase.co",KEY="sb_publishable_MAn1jK_Yfobh_Aszlsk2XQ_4p_sBbkQ",okConfig=!URL.startsWith("YOUR_")&&!KEY.startsWith("YOUR_"),$=x=>document.getElementById(x);let sb,user=null,admin=false,qs=[],guest="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const email=u=>u.toLowerCase()+"@accounts.oxquiz.invalid";const valid=u=>/^[a-zA-Z0-9_]{3,24}$/.test(u);
 function show(id){["auth","quiz","history","admin"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}
