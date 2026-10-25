@@ -21,5 +21,14 @@ async function history(){if(!user){$("histIntro").textContent="기록을 보려�
 function clearQ(){$("editId").value="";$("qText").value="";$("qAnswer").value="true";$("qExpl").value="";$("pub").checked=true}$("clear").onclick=clearQ;
 $("save").onclick=async()=>{if(!admin)return;let id=$("editId").value,p={question:$("qText").value.trim(),answer:$("qAnswer").value==="true",explanation:$("qExpl").value.trim(),published:$("pub").checked};if(!p.question)return $("message").textContent="문제를 입력하세요.";let r=id?await sb.from("questions").update(p).eq("id",id):await sb.from("questions").insert(p);if(r.error)return $("message").textContent=r.error.message;clearQ();await loadQs();await adminLoad()};
 async function adminLoad(){if(!admin)return;let {data,error}=await sb.from("questions").select("*").order("id");if(error)return $("adminList").textContent=error.message;$("adminList").innerHTML=data.map(q=>`<div class="card"><b>${esc(q.question)}</b><p>${q.answer?"정답 O":"정답 X"} · ${q.published?"공개":"비공개"}</p><p>${esc(q.explanation)}</p><button class="secondary" data-edit="${q.id}">수정</button><button data-del="${q.id}">삭제</button></div>`).join("");$("adminList").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{let q=data.find(z=>z.id===+b.dataset.edit);$("editId").value=q.id;$("qText").value=q.question;$("qAnswer").value=String(q.answer);$("qExpl").value=q.explanation;$("pub").checked=q.published});$("adminList").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(confirm("삭제할까요?")){let r=await sb.from("questions").delete().eq("id",+b.dataset.del);if(r.error)alert(r.error.message);else{await loadQs();await adminLoad()}}})}
+window.addEventListener("error", e => {
+  const m = document.getElementById("message");
+  if (m) m.textContent = "오류: " + e.message;
+});
+
+window.addEventListener("unhandledrejection", e => {
+  const m = document.getElementById("message");
+  if (m) m.textContent = "요청 오류: " + String(e.reason);
+});
 init();
 </script></body></html>
