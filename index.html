@@ -504,24 +504,39 @@ async function loadRanking() {
     return;
   }
 
-  function renderRanking(rows) {
-    if (!rows.length) return "<p>아직 기록이 없습니다.</p>";
+  
+function anonymousName(id) {
+  const animals = [
+    "한녀", "개미", "롤대남", "토끼", "흑인",
+    "한남", "호랑이", "오징어", "돼지", "뽀삐"
+  ];
 
-    return `<ol>${rows.map(r => `
-      <li style="margin:10px 0">
-        <strong>${esc(r.username)}</strong>
-        — 정답 ${esc(r.total_score)}개 · 정답률 ${esc(r.accuracy)}%
-      </li>
-    `).join("")}</ol>`;
+  // 회원 ID를 기반으로 항상 같은 익명 이름을 생성
+  let hash = 0;
+  for (let i = 0; i < String(id).length; i++) {
+    hash = (hash * 31 + String(id).charCodeAt(i)) >>> 0;
   }
 
-  $("overallRanking").innerHTML = renderRanking(
-    (data || []).filter(r => r.ranking_type === "overall")
-  );
-  $("weeklyRanking").innerHTML = renderRanking(
-    (data || []).filter(r => r.ranking_type === "weekly")
-  );
+  const animal = animals[hash % animals.length];
+  const number = String((hash * 7919) % 1000).padStart(3, "0");
+
+  return `익명${animal}${number}`;
 }
+
+function renderRanking(rows) {
+  if (!rows.length) {
+    return "<p>아직 기록이 없습니다.</p>";
+  }
+
+  return `<ol>${rows.map(r => `
+    <li style="margin:10px 0">
+      <strong>${anonymousName(r.user_id)}</strong>
+      — 정답 ${esc(r.total_score)}개
+      · 정답률 ${esc(r.accuracy)}%
+    </li>
+  `).join("")}</ol>`;
+}
+
 
 async function init() {
   try {
