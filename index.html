@@ -104,9 +104,17 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({
 }[c]));
 
 function show(id){
-  ["auth","quiz","history","admin"].forEach(x => $(x).classList.toggle("hidden",x!==id));
-  ["navAuth","navQuiz","navHistory","navAdmin"].forEach(x => {
-    const target = {navAuth:"auth",navQuiz:"quiz",navHistory:"history",navAdmin:"admin"}[x];
+  ["auth","quiz","history","admin","ranking"].forEach(x => {
+    $(x).classList.toggle("hidden",x!==id);
+  });
+  ["navAuth","navQuiz","navHistory","navAdmin","navRanking"].forEach(x => {
+    const target = {
+      navAuth:"auth",
+      navQuiz:"quiz",
+      navHistory:"history",
+      navAdmin:"admin",
+      navRanking:"ranking"
+    }[x];
     $(x).classList.toggle("active",target===id);
   });
 }
