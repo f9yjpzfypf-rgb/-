@@ -274,50 +274,11 @@ async function submitQuiz() {
   }
 }
 
-
 async function loadHistory() {
   if (!user) {
     $("historyList").textContent = "기록을 보려면 로그인해 주세요.";
     return;
   }
-
-  $("historyList").textContent = "기록을 불러오는 중...";
-
-  const { data, error } = await db
-    .from("attempts")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  if (error) {
-    $("historyList").textContent = "기록 조회 실패: " + error.message;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    $("historyList").textContent = "저장된 기록이 없습니다.";
-    return;
-  }
-
-  $("historyList").innerHTML = data.map(a => `
-    <div class="card">
-      <strong>점수: ${esc(a.score)} / ${esc(a.total)}</strong>
-      <p>${esc(a.created_at ? new Date(a.created_at).toLocaleString() : "날짜 없음")}</p>
-      <button type="button" class="detailBtn" data-id="${esc(a.id)}">
-        문제와 해설 보기
-      </button>
-      <div id="detail${esc(a.id)}" class="attempt-detail"></div>
-    </div>
-  `).join("");
-
-  $("historyList").querySelectorAll(".detailBtn").forEach(button => {
-    button.addEventListener("click", async () => {
-      await loadAttemptDetails(button.dataset.id);
-    });
-  });
-}
-
 
   $("historyList").textContent = "기록을 불러오는 중...";
 
